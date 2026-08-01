@@ -1,0 +1,12 @@
+services:
+  boundaryforge:
+    build: .
+    container_name: boundaryforge-dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_BROWSER_GATHERUSAGESTATS=false
+      - STREAMLIT_SERVER_PORT=8501
+    volumes:
+      - ./boundaryforge-output:/app/boundaryforge-output

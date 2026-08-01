@@ -1,0 +1,28 @@
+# Git metadata
+.git
+.gitignore
+
+# Python artifacts
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.pytest_cache
+.mypy_cache
+
+# Virtual environments
+.venv
+venv
+env
+
+# Local output and IDE files
+boundaryforge-output
+bf-test-output
+*.md
+.vscode
+.idea
+
+# Docker files themselves (not needed inside image)
+Dockerfile
+docker-compose.yml
+.dockerignore
