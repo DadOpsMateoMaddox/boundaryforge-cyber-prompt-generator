@@ -127,9 +127,15 @@ class Turn:
     role: str
     content: str
     rationale: str = ""  # Why this turn exists in the arc.
+    danger_level: DangerLevel | None = None  # Per-turn label when required.
 
     def to_dict(self) -> dict[str, Any]:
-        return {"role": self.role, "content": self.content, "rationale": self.rationale}
+        return {
+            "role": self.role,
+            "content": self.content,
+            "rationale": self.rationale,
+            "danger_level": self.danger_level.value if self.danger_level else None,
+        }
 
 
 @dataclass(frozen=True)
@@ -217,6 +223,12 @@ class ConstraintSet:
     require_url_placeholders: bool = True
     normalize_urls: bool = True
     near_duplicate_threshold: float = 0.85
+    reference_material_max_words: int = 250
+    single_turn_min_sentences: int = 3
+    single_turn_max_sentences: int = 8
+    multi_turn_target_turns: int = 3
+    multi_turn_min_sentences_per_turn: int = 2
+    multi_turn_max_sentences_per_turn: int = 6
 
 
 @dataclass

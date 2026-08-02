@@ -84,6 +84,8 @@ class ConstraintValidator:
         findings.extend(self._check_prompt_length(variant, path_prefix, phase))
         findings.extend(self._check_rationale_length(variant, path_prefix, phase))
         findings.extend(self._check_per_turn_rationales(variant, path_prefix, phase))
+        findings.extend(self._check_exchange_type_constraints(variant, expected_exchange_type, path_prefix, phase))
+        findings.extend(self._check_per_turn_labels(variant, path_prefix, phase))
         findings.extend(self._check_url_normalization(variant, path_prefix, phase))
         findings.extend(self._check_attack_vector_fields(variant, path_prefix, phase))
         findings.extend(self._check_no_model_response_tags(variant, path_prefix, phase))
@@ -308,6 +310,113 @@ class ConstraintValidator:
                         actual="empty",
                     )
                 )
+        return findings
+
+    def _check_exchange_type_constraints(
+        self,
+        variant: PromptVariant,
+        exchange_type: ExchangeType,
+        path: str,
+        phase: GenerationPhase,
+    ) -> list[ConstraintViolation]:
+        """Enforce dataset-specific length rules for single-turn/agentic vs multi-turn prompts."""
+        findings: list[ConstraintViolation] = []
+        if phase.value < GenerationPhase.GENERATED.value:
+            return findings
+
+        c = self.constraints
+        if exchange_type == ExchangeType.MULTI_TURN:
+            if variant.turn_count != c.multi_turn_target_turns:
+                findings.append(
+                    ConstraintViolation(
+                        code="CNS-SIZE-006",
+                        message=(
+                            f"Multi-turn prompt has {variant.turn_count} turns "
+                            f"(target {c.multi_turn_target_turns})."
+                        ),
+                        severity=Severity.WARNING,
+                        path=f"{path}.turns",
+                        phase=phase,
+                        expected=f"== {c.multi_turn_target_turns}",
+                        actual=variant.turn_count,
+                    )
+                )
+            for i, turn in enumerate(variant.turns):
+                sc = turn.content.count(".") + turn.content.count("?") + turn.content.count("!")
+                if sc < c.multi_turn_min_sentences_per_turn or sc > c.multi_turn_max_sentences_per_turn:
+                    findings.append(
+                        ConstraintViolation(
+                            code="CNS-SIZE-007",
+                            message=(
+                                f"Multi-turn turn {i} has {sc} sentences "
+                                f"(expected {c.multi_turn_min_sentences_per_turn}-"
+                                f"{c.multi_turn_max_sentences_per_turn})."
+                            ),
+                            severity=Severity.WARNING,
+                            path=f"{path}.turns[{i}].content",
+                            phase=phase,
+                            expected=(
+                                f"{c.multi_turn_min_sentences_per_turn}-"
+                                f"{c.multi_turn_max_sentences_per_turn}"
+                            ),
+                            actual=sc,
+                        )
+                    )
+        else:
+            # Agentic and user_question prompts are effectively single-turn user requests.
+            sc = variant.sentence_count
+            if sc < c.single_turn_min_sentences or sc > c.single_turn_max_sentences:
+                findings.append(
+                    ConstraintViolation(
+                        code="CNS-SIZE-008",
+                        message=(
+                            f"{exchange_type.value} prompt has {sc} sentences "
+                            f"(expected {c.single_turn_min_sentences}-"
+                            f"{c.single_turn_max_sentences})."
+                        ),
+                        severity=Severity.WARNING,
+                        path=f"{path}.turns",
+                        phase=phase,
+                        expected=f"{c.single_turn_min_sentences}-{c.single_turn_max_sentences}",
+                        actual=sc,
+                    )
+                )
+
+        return findings
+
+    def _check_per_turn_labels(
+        self,
+        variant: PromptVariant,
+        path: str,
+        phase: GenerationPhase,
+    ) -> list[ConstraintViolation]:
+        """If turns carry per-turn danger levels, ensure the conversation label is at least the max turn label."""
+        findings: list[ConstraintViolation] = []
+        if phase.value < GenerationPhase.GENERATED.value:
+            return findings
+
+        labels = [t.danger_level for t in variant.turns if t.danger_level is not None]
+        if not labels:
+            return findings
+
+        _rank = {DangerLevel.BENIGN: 1, DangerLevel.WARN: 2, DangerLevel.DANGEROUS: 3}
+        max_label = max(labels, key=lambda d: _rank[d])
+        if _rank[max_label] > _rank[variant.danger_level]:
+            findings.append(
+                ConstraintViolation(
+                    code="CNS-LBL-001",
+                    message=(
+                        f"Variant is labeled {variant.danger_level.value} but a turn is labeled "
+                        f"{max_label.value}; conversation label must be at least as high as the "
+                        f"most dangerous turn."
+                    ),
+                    severity=Severity.ERROR,
+                    path=f"{path}.danger_level",
+                    phase=phase,
+                    expected=f">= {max_label.value}",
+                    actual=variant.danger_level.value,
+                )
+            )
         return findings
 
     def _check_url_normalization(

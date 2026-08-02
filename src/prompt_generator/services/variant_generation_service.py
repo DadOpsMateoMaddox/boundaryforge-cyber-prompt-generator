@@ -258,7 +258,12 @@ class VariantGenerationService:
                 if content and not content.endswith((".", "?", "!")):
                     content += "."
                 content += " " + " ".join(additions)
-                new_turns[i] = Turn(role=new_turns[i].role, content=content, rationale=new_turns[i].rationale)
+                new_turns[i] = Turn(
+                    role=new_turns[i].role,
+                    content=content,
+                    rationale=new_turns[i].rationale,
+                    danger_level=new_turns[i].danger_level,
+                )
                 break
 
         prompt_text = "\n\n".join(f"{t.role.capitalize()}: {t.content}" for t in new_turns)

@@ -107,7 +107,12 @@ class PromptGenerator:
         for key, value in placeholders.items():
             content = content.replace(f"{{{key}}}", value)
         content = collapse_whitespace(content)
-        return Turn(role=turn.role, content=content, rationale=turn.rationale)
+        return Turn(
+            role=turn.role,
+            content=content,
+            rationale=turn.rationale,
+            danger_level=turn.danger_level,
+        )
 
 
 def generate_package(

@@ -97,7 +97,14 @@ class Humanizer:
         for turn in variant.turns:
             if turn.role == "user":
                 new_content = self.humanize_text(turn.content)
-                new_turns.append(Turn(role=turn.role, content=new_content, rationale=turn.rationale))
+                new_turns.append(
+                    Turn(
+                        role=turn.role,
+                        content=new_content,
+                        rationale=turn.rationale,
+                        danger_level=turn.danger_level,
+                    )
+                )
             else:
                 new_turns.append(turn)
 
