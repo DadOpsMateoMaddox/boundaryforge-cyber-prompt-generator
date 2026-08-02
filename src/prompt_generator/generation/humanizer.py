@@ -48,8 +48,6 @@ class Humanizer:
         "Hey, ",
         "So, ",
         "Quick question — ",
-        "I need a hand with something. ",
-        "Can you help me out? ",
         "",
     ]
 
