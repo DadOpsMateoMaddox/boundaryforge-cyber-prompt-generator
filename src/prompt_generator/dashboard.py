@@ -12,11 +12,11 @@ from io import BytesIO
 
 import streamlit as st
 
-from .export.json import export_json
-from .export.markdown import export_markdown
-from .models import DangerLevel, ExchangeType, PromptPackage, TaskCategory
-from .services import DANGEROUS_UPLIFT_CONTROLS, WARN_SAFEGUARDS, VariantGenerationRequest, VariantGenerationResult, VariantGenerationService
-from .task_spec import SUPPORTED_DOMAINS
+from prompt_generator.export.json import export_json
+from prompt_generator.export.markdown import export_markdown
+from prompt_generator.models import DangerLevel, ExchangeType, PromptPackage, TaskCategory
+from prompt_generator.services import DANGEROUS_UPLIFT_CONTROLS, WARN_SAFEGUARDS, VariantGenerationRequest, VariantGenerationResult, VariantGenerationService
+from prompt_generator.task_spec import SUPPORTED_DOMAINS
 
 
 DEFAULT_STATE = {
